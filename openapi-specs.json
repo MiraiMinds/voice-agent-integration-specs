@@ -1,0 +1,1040 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Voice Agent by Mirai Minds",
+    "contact": {
+      "name": "API Architecture Team",
+      "url": "https://miraiminds.co"
+    },
+    "version": "1.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://voice-agents.miraiminds.co/v1",
+      "description": "Production Server"
+    }
+  ],
+  "paths": {
+    "/v1/onboarding": {
+      "post": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "onboarding shopify store",
+        "description": "Uploads the store's identity, trust metrics, and policies. Returns the Workspace ID and Billing Configuration (Prepaid/Overdraft limits).\n",
+        "operationId": "initializeWorkspace",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Workspace Created & Billing Configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation Error"
+          }
+        }
+      }
+    },
+    "/assistant/create": {
+      "post": {
+        "tags": [
+          "Assistant Creation"
+        ],
+        "summary": "Create AI Assistant",
+        "operationId": "createAssistant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Assistant Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_201"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/calls/initiate": {
+      "post": {
+        "tags": [
+          "Call"
+        ],
+        "summary": "Initiate AI Call",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "header",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateCallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Call queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateCallResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/calls/abort": {
+      "post": {
+        "tags": [
+          "Call"
+        ],
+        "summary": "Abort Call",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "header",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbortCallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Call aborted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AbortCallResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/call-events": {
+      "post": {
+        "tags": [
+          "Call"
+        ],
+        "summary": "Call Events Webhook",
+        "description": "Receives call status and action events",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Event received"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OnboardingResponse": {
+        "type": "object",
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "description": "The unique key for all future API calls.",
+            "example": "4524239459234"
+          },
+          "status": {
+            "type": "string",
+            "example": "active",
+            "enum": [
+              "active",
+              "pending_verification",
+              "suspended"
+            ]
+          },
+          "billing": {
+            "$ref": "#/components/schemas/OnboardingResponse_billing"
+          }
+        },
+        "example": {
+          "workspace_id": "4524239459234",
+          "status": "active",
+          "billing": {
+            "negative_balance_allowance_minutes": 100,
+            "type": "prepaid"
+          }
+        }
+      },
+      "OnboardingRequest": {
+        "required": [
+          "policy_framework",
+          "store_identity",
+          "trust_signals"
+        ],
+        "type": "object",
+        "properties": {
+          "store_identity": {
+            "$ref": "#/components/schemas/StoreIdentity"
+          },
+          "trust_signals": {
+            "$ref": "#/components/schemas/TrustSignals"
+          },
+          "policy_framework": {
+            "$ref": "#/components/schemas/PolicyFramework"
+          }
+        }
+      },
+      "StoreIdentity": {
+        "required": [
+          "currency_code",
+          "shop_domain",
+          "support_contacts"
+        ],
+        "type": "object",
+        "properties": {
+          "shop_domain": {
+            "type": "string",
+            "example": "brand.myshopify.com"
+          },
+          "store_name": {
+            "type": "string",
+            "example": "The Leather Co."
+          },
+          "admin_token": {
+            "type": "string"
+          },
+          "currency_code": {
+            "type": "string",
+            "example": "INR"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Kolkata"
+          },
+          "support_contacts": {
+            "$ref": "#/components/schemas/StoreIdentity_support_contacts"
+          }
+        }
+      },
+      "TrustSignals": {
+        "required": [
+          "value_proposition_one_liner"
+        ],
+        "type": "object",
+        "properties": {
+          "customers_till_date": {
+            "type": "integer",
+            "example": 15400
+          },
+          "total_orders_fulfilled": {
+            "type": "integer",
+            "example": 50000
+          },
+          "store_rating": {
+            "type": "number",
+            "example": 4.8
+          },
+          "value_proposition_one_liner": {
+            "type": "string",
+            "example": "Handcrafted in Jaipur using 100% sustainable vegan leather."
+          }
+        }
+      },
+      "PolicyFramework": {
+        "required": [
+          "cod_policy",
+          "return_policy",
+          "shipping_policy"
+        ],
+        "type": "object",
+        "properties": {
+          "return_policy": {
+            "$ref": "#/components/schemas/ReturnPolicy"
+          },
+          "shipping_policy": {
+            "$ref": "#/components/schemas/ShippingPolicy"
+          },
+          "cod_policy": {
+            "$ref": "#/components/schemas/CodPolicy"
+          }
+        }
+      },
+      "ReturnPolicy": {
+        "type": "object",
+        "properties": {
+          "window_days": {
+            "type": "integer",
+            "example": 7
+          },
+          "processing_fee": {
+            "$ref": "#/components/schemas/ReturnPolicy_processing_fee"
+          },
+          "refund_timeline_days": {
+            "type": "integer",
+            "example": 3
+          }
+        }
+      },
+      "ShippingPolicy": {
+        "type": "object",
+        "properties": {
+          "delivery_timeline": {
+            "$ref": "#/components/schemas/ShippingPolicy_delivery_timeline"
+          },
+          "free_shipping_min_order_value": {
+            "type": "number",
+            "example": 999
+          }
+        }
+      },
+      "CodPolicy": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "additional_fee": {
+            "$ref": "#/components/schemas/ReturnPolicy_processing_fee"
+          }
+        }
+      },
+      "AssistantRequest": {
+        "required": [
+          "assistant_task_config",
+          "call_settings",
+          "icp_context",
+          "identity_core",
+          "type",
+          "workspace_id"
+        ],
+        "type": "object",
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "example": "ws_mirai_x99"
+          },
+          "type": {
+            "type": "string",
+            "description": "This value changes the validation rules for 'assistant_task_config'.",
+            "enum": [
+              "abandoned_cart",
+              "ndr_verification"
+            ]
+          },
+          "success_metric": {
+            "type": "string",
+            "example": "payment link sent"
+          },
+          "identity_core": {
+            "$ref": "#/components/schemas/IdentityCore"
+          },
+          "icp_context": {
+            "$ref": "#/components/schemas/ICPContext"
+          },
+          "call_settings": {
+            "$ref": "#/components/schemas/CallSettings"
+          },
+          "advanced_prompt_override": {
+            "type": "string",
+            "description": "OPTIONAL. If provided, this raw text becomes the System Prompt. It overrides 'identity_core', 'icp_context', and 'assistant_task_config' logic. Useful for advanced users who want total control.\n",
+            "example": "You are Sarah, a sales agent. Your goal is to..."
+          },
+          "human_training_data": {
+            "$ref": "#/components/schemas/AssistantRequest_human_training_data"
+          },
+          "custom_knowledge_base": {
+            "type": "array",
+            "description": "Brand-specific FAQs that don't fit in the standard flow.",
+            "items": {
+              "$ref": "#/components/schemas/AssistantRequest_custom_knowledge_base"
+            }
+          },
+          "assistant_task_config": {
+            "type": "object",
+            "description": "Dynamic configuration. Structure depends on 'type'.",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "abandoned_cart": "#/components/schemas/AbandonedCartConfig"
+              }
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AbandonedCartConfig"
+              }
+            ]
+          }
+        }
+      },
+      "AbandonedCartConfig": {
+        "required": [
+          "discount_rules",
+          "sales_pitch_flow"
+        ],
+        "type": "object",
+        "properties": {
+          "sales_pitch_flow": {
+            "minItems": 3,
+            "type": "array",
+            "description": "The strict priority order of arguments the AI will use.",
+            "example": [
+              "company_usp_pitch",
+              "return_policy_assurance",
+              "discount_offer"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "company_usp_pitch",
+                "product_value_pitch",
+                "return_policy_assurance",
+                "cod_availability_offer",
+                "discount_offer"
+              ]
+            }
+          },
+          "discount_rules": {
+            "$ref": "#/components/schemas/AbandonedCartConfig_discount_rules"
+          }
+        }
+      },
+      "RetryProtocol": {
+        "type": "object",
+        "properties": {
+          "max_attempts_no_pickup": {
+            "type": "integer",
+            "description": "Phone rang, no answer. Call back twice.",
+            "default": 2
+          },
+          "max_attempts_low_engagement": {
+            "type": "integer",
+            "description": "User picked up but said 'busy' or cut immediately. Call back once.",
+            "default": 1
+          },
+          "reAttemptPeriod": {
+            "type": "integer",
+            "description": "Delay between second reattempt of call to same person in seconds",
+            "default": 300
+          },
+          "maxRescheduleCount": {
+            "maximum": 5,
+            "type": "integer",
+            "description": "How many times we can reschedule a call when user ask to callback",
+            "default": 1
+          }
+        },
+        "description": "Smart logic based on why the call failed."
+      },
+      "CallSettings": {
+        "required": [
+          "execution_mode",
+          "retry_protocol"
+        ],
+        "type": "object",
+        "properties": {
+          "execution_mode": {
+            "type": "string",
+            "description": "Continuous = Real-time triggers. Batched = Specific slots.",
+            "enum": [
+              "continuous",
+              "batched"
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "example": "2026-01-07T00:00:00.000Z"
+          },
+          "end_date": {
+            "type": "string",
+            "example": "2026-01-31T00:00:00.000Z"
+          },
+          "batch_windows": {
+            "type": "array",
+            "description": "Required if execution_mode is 'batched'.",
+            "items": {
+              "$ref": "#/components/schemas/CallSettings_batch_windows"
+            }
+          },
+          "maxCallDuration": {
+            "type": "number",
+            "example": 200
+          },
+          "concurrentCallCount": {
+            "maximum": 10,
+            "type": "number",
+            "example": 5
+          },
+          "retry_protocol": {
+            "$ref": "#/components/schemas/RetryProtocol"
+          }
+        }
+      },
+      "IdentityCore": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female"
+            ]
+          },
+          "traits": {
+            "type": "string",
+            "enum": [
+              "soft_luxury",
+              "high_energy_sales",
+              "professional_support"
+            ]
+          }
+        }
+      },
+      "ICPContext": {
+        "type": "object",
+        "properties": {
+          "target_age_group": {
+            "type": "string",
+            "description": "Affects slang usage. Gen Z = 'Vibe'; Boomers = 'Quality'.",
+            "enum": [
+              "gen_z",
+              "millennials",
+              "gen_x",
+              "boomers"
+            ]
+          },
+          "location_tier": {
+            "type": "string",
+            "description": "Affects language complexity and speed.",
+            "enum": [
+              "metro_urban",
+              "tier1_2",
+              "tier3_rural"
+            ]
+          }
+        }
+      },
+      "CallStatus": {
+        "type": "string",
+        "description": "Current call status",
+        "enum": [
+          "initiate",
+          "in-progress",
+          "ended",
+          "completed",
+          "timeout",
+          "failed",
+          "validation-failed",
+          "busy",
+          "no-answer",
+          "skip",
+          "rescheduled",
+          "aborted"
+        ]
+      },
+      "EventType": {
+        "type": "string",
+        "description": "Webhook event type",
+        "enum": [
+          "call.initiate",
+          "call.in-progress",
+          "call.ended",
+          "call.completed",
+          "call.timeout",
+          "call.failed",
+          "call.validation-failed",
+          "call.busy",
+          "call.no-answer",
+          "call.skip",
+          "call.rescheduled",
+          "call.aborted",
+          "create-order",
+          "send-whatsapp"
+        ]
+      },
+      "WhatsappReason": {
+        "type": "string",
+        "enum": [
+          "missing_address",
+          "improper_address",
+          "missing_first_name",
+          "send_payment_link"
+        ]
+      },
+      "InitiateCallRequest": {
+        "required": [
+          "assistant",
+          "callbackUrl",
+          "number",
+          "payload"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "Phone number (E.164 recommended)",
+            "example": "+919876543210"
+          },
+          "assistant": {
+            "type": "string",
+            "description": "Assistant ID"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Shopify abandoned cart payload"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "description": "HTTPS webhook URL",
+            "format": "uri"
+          },
+          "extraContext": {
+            "$ref": "#/components/schemas/InitiateCallRequest_extraContext"
+          }
+        }
+      },
+      "InitiateCallResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          },
+          "callId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "callId": "callId",
+          "status": "initiate"
+        }
+      },
+      "AbortCallRequest": {
+        "required": [
+          "callId"
+        ],
+        "type": "object",
+        "properties": {
+          "callId": {
+            "type": "string"
+          }
+        }
+      },
+      "AbortCallResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          },
+          "callId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "callId": "callId",
+          "status": "initiate"
+        }
+      },
+      "WebhookEvent": {
+        "required": [
+          "data",
+          "event"
+        ],
+        "type": "object",
+        "properties": {
+          "event": {
+            "allOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/EventType"
+              }
+            ]
+          },
+          "extraContext": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CallCompletedData"
+              },
+              {
+                "$ref": "#/components/schemas/CreateOrderData"
+              },
+              {
+                "$ref": "#/components/schemas/SendWhatsappData"
+              }
+            ]
+          }
+        },
+        "discriminator": {
+          "propertyName": "event",
+          "mapping": {
+            "call.completed": "#/components/schemas/CallCompletedData",
+            "create-order": "#/components/schemas/CreateOrderData",
+            "send-whatsapp": "#/components/schemas/SendWhatsappData"
+          }
+        }
+      },
+      "CallCompletedData": {
+        "type": "object",
+        "properties": {
+          "callId": {
+            "type": "string"
+          },
+          "durationSeconds": {
+            "type": "number"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recordingUrl": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          },
+          "price": {
+            "type": "number"
+          }
+        }
+      },
+      "CreateOrderData": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "shippingAddress": {
+            "$ref": "#/components/schemas/CreateOrderData_shippingAddress"
+          },
+          "cartTotal": {
+            "type": "number"
+          },
+          "codCharge": {
+            "type": "number"
+          },
+          "discount": {
+            "$ref": "#/components/schemas/CreateOrderData_discount"
+          }
+        }
+      },
+      "SendWhatsappData": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/WhatsappReason"
+          }
+        }
+      },
+      "inline_response_201": {
+        "type": "object",
+        "properties": {
+          "assistant_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "assistant_id": "assistant_id",
+          "status": "status"
+        }
+      },
+      "OnboardingResponse_billing": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "prepaid",
+            "enum": [
+              "prepaid",
+              "postpaid"
+            ]
+          },
+          "negative_balance_allowance_minutes": {
+            "type": "integer",
+            "description": "The 'Overdraft' limit. The AI will continue to make calls  for 100 minutes even if credits hit 0 before suspending.\n",
+            "example": 100
+          }
+        },
+        "example": {
+          "negative_balance_allowance_minutes": 100,
+          "type": "prepaid"
+        }
+      },
+      "StoreIdentity_support_contacts": {
+        "required": [
+          "phone_number"
+        ],
+        "type": "object",
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "example": "+91-9876543210"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "support@brand.com"
+          }
+        }
+      },
+      "ReturnPolicy_processing_fee": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 50
+          }
+        }
+      },
+      "ShippingPolicy_delivery_timeline": {
+        "type": "object",
+        "properties": {
+          "min_days": {
+            "type": "integer",
+            "example": 3
+          },
+          "max_days": {
+            "type": "integer",
+            "example": 5
+          }
+        }
+      },
+      "AssistantRequest_human_training_data": {
+        "type": "object",
+        "properties": {
+          "best_call_samples": {
+            "maxItems": 3,
+            "minItems": 1,
+            "type": "array",
+            "description": "URLs to the top 3 recordings of human agents closing deals.",
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "example": "https://s3.bucket/calls/best_closer_1.mp3"
+            }
+          }
+        },
+        "description": "Optional but highly recommended for cloning success."
+      },
+      "AssistantRequest_custom_knowledge_base": {
+        "required": [
+          "answer",
+          "question"
+        ],
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "example": "Is this product waterproof?"
+          },
+          "answer": {
+            "type": "string",
+            "example": "Yes, it is IP67 rated."
+          }
+        }
+      },
+      "AbandonedCartConfig_discount_rules": {
+        "type": "object",
+        "properties": {
+          "can_offer": {
+            "type": "boolean"
+          },
+          "max_percent": {
+            "type": "integer",
+            "example": 15
+          }
+        }
+      },
+      "CallSettings_batch_windows": {
+        "type": "object",
+        "properties": {
+          "start_time": {
+            "type": "string",
+            "example": "10:00"
+          },
+          "end_time": {
+            "type": "string",
+            "example": "13:00"
+          }
+        }
+      },
+      "InitiateCallRequest_extraContext_discount": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "codeType": {
+            "type": "string",
+            "description": "%tage or fixed"
+          }
+        }
+      },
+      "InitiateCallRequest_extraContext": {
+        "type": "object",
+        "properties": {
+          "discount": {
+            "$ref": "#/components/schemas/InitiateCallRequest_extraContext_discount"
+          }
+        },
+        "additionalProperties": true
+      },
+      "CreateOrderData_shippingAddress": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "address1": {
+            "type": "string"
+          },
+          "address2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "zip": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateOrderData_discount": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "WorkspaceIdHeader": {
+        "name": "workspaceId",
+        "in": "header",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "AccessKeyAuth": {
+        "type": "apiKey",
+        "name": "access-key",
+        "in": "header"
+      }
+    }
+  }
+}
