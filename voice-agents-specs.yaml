@@ -19,20 +19,23 @@ paths:
         Returns the Workspace ID and Billing Configuration (Prepaid/Overdraft limits).
       tags:
         - Onboarding
+      parameters:
+        - $ref: "#/components/parameters/PublicKeyHeader"
+        - $ref: "#/components/parameters/PrivateKeyHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OnboardingRequest'
+              $ref: "#/components/schemas/OnboardingRequest"
       responses:
-        '201':
+        "201":
           description: Workspace Created & Billing Configured
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OnboardingResponse'
-        '400':
+                $ref: "#/components/schemas/OnboardingResponse"
+        "400":
           description: Validation Error
   /assistant/create:
     post:
@@ -40,14 +43,18 @@ paths:
       operationId: createAssistant
       tags:
         - Assistant Creation
+      parameters:
+        - $ref: "#/components/parameters/PublicKeyHeader"
+        - $ref: "#/components/parameters/PrivateKeyHeader"
+        - $ref: "#/components/parameters/WorkspaceIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssistantRequest'
+              $ref: "#/components/schemas/AssistantRequest"
       responses:
-        '201':
+        "201":
           description: Assistant Created
           content:
             application/json:
@@ -65,20 +72,22 @@ paths:
       tags:
         - Call
       parameters:
-        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - $ref: "#/components/parameters/PublicKeyHeader"
+        - $ref: "#/components/parameters/PrivateKeyHeader"
+        - $ref: "#/components/parameters/WorkspaceIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InitiateCallRequest'
+              $ref: "#/components/schemas/InitiateCallRequest"
       responses:
-        '200':
+        "200":
           description: Call queued
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitiateCallResponse'
+                $ref: "#/components/schemas/InitiateCallResponse"
 
   /v1/calls/abort:
     post:
@@ -86,20 +95,22 @@ paths:
       tags:
         - Call
       parameters:
-        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - $ref: "#/components/parameters/PublicKeyHeader"
+        - $ref: "#/components/parameters/PrivateKeyHeader"
+        - $ref: "#/components/parameters/WorkspaceIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AbortCallRequest'
+              $ref: "#/components/schemas/AbortCallRequest"
       responses:
-        '200':
+        "200":
           description: Call aborted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AbortCallResponse'
+                $ref: "#/components/schemas/AbortCallResponse"
 
   /webhooks/call-events:
     post:
@@ -112,11 +123,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WebhookEvent'
+              $ref: "#/components/schemas/WebhookEvent"
       responses:
-        '200':
+        "200":
           description: Event received
-
 
 components:
   securitySchemes:
@@ -128,6 +138,18 @@ components:
   parameters:
     WorkspaceIdHeader:
       name: workspaceId
+      in: header
+      required: true
+      schema:
+        type: string
+    PublicKeyHeader:
+      name: x-public-key
+      in: header
+      required: true
+      schema:
+        type: string
+    PrivateKeyHeader:
+      name: x-private-key
       in: header
       required: true
       schema:
@@ -144,12 +166,12 @@ components:
           type: string
           example: "4524239459234"
           description: The unique key for all future API calls.
-        
+
         status:
           type: string
           example: "active"
           enum: ["active", "pending_verification", "suspended"]
-        
+
         billing:
           type: object
           properties:
@@ -158,18 +180,17 @@ components:
               example: "prepaid"
               enum: ["prepaid", "postpaid"]
 
-
             creditBalance:
               type: integer
               example: 100
-              descriptoin: >
+              description: >
                 Current available credits in workspace
-            
+
             negativeCreditAllowance:
               type: integer
               example: 100
               description: >
-                The 'Overdraft' limit. The AI will continue to make calls 
+                The 'Overdraft' limit. The AI will continue to make calls
                 for 100 credit even if credits hit 0 before suspending.
 
     # ----------------------------------------------------------------
@@ -183,11 +204,11 @@ components:
         - policyFramework
       properties:
         storeIdentity:
-          $ref: '#/components/schemas/StoreIdentity'
+          $ref: "#/components/schemas/StoreIdentity"
         trustSignals:
-          $ref: '#/components/schemas/TrustSignals'
+          $ref: "#/components/schemas/TrustSignals"
         policyFramework:
-          $ref: '#/components/schemas/PolicyFramework'
+          $ref: "#/components/schemas/PolicyFramework"
 
     StoreIdentity:
       type: object
@@ -203,7 +224,7 @@ components:
           type: string
           example: "The Leather Co."
         adminToken:
-            type: string
+          type: string
         currencyCode:
           type: string
           example: "INR"
@@ -249,11 +270,11 @@ components:
         - cod_policy
       properties:
         return_policy:
-          $ref: '#/components/schemas/ReturnPolicy'
+          $ref: "#/components/schemas/ReturnPolicy"
         shipping_policy:
-          $ref: '#/components/schemas/ShippingPolicy'
+          $ref: "#/components/schemas/ShippingPolicy"
         cod_policy:
-          $ref: '#/components/schemas/CodPolicy'
+          $ref: "#/components/schemas/CodPolicy"
 
     ReturnPolicy:
       type: object
@@ -305,17 +326,12 @@ components:
     AssistantRequest:
       type: object
       required:
-        - workspaceId
         - type
         - identityCore
         - icpContext
         - callSettings
-        - assistantTaskConfig 
+        - assistantTaskConfig
       properties:
-        workspaceId:
-          type: string
-          example: "ws_mirai_x99"
-        
         # THE DISCRIMINATOR
         type:
           type: string
@@ -328,25 +344,24 @@ components:
 
         # --- COMMON BLOCKS (Shared by ALL Agents) ---
         identityCore:
-          $ref: '#/components/schemas/IdentityCore'
-        
+          $ref: "#/components/schemas/IdentityCore"
+
         icpContext:
-          $ref: '#/components/schemas/ICPContext'
+          $ref: "#/components/schemas/ICPContext"
 
         callSettings:
-          $ref: '#/components/schemas/CallSettings'
+          $ref: "#/components/schemas/CallSettings"
 
         # --- POLYMORPHIC BLOCK (Changes based on Type) ---
         assistantTaskConfig:
           type: object
           description: "Dynamic configuration. Structure depends on 'type'."
           oneOf:
-            - $ref: '#/components/schemas/AbandonedCartConfig'
+            - $ref: "#/components/schemas/AbandonedCartConfig"
           discriminator:
             propertyName: type
             mapping:
-              abandoned_cart: '#/components/schemas/AbandonedCartConfig'
-
+              abandoned_cart: "#/components/schemas/AbandonedCartConfig"
 
     # ================================================================
     # CONFIG A: ABANDONED CART (The Salesman)
@@ -358,7 +373,6 @@ components:
         - salesPitchFlow
         - discountRules
       properties:
-
         # 1. THE STRATEGIC SEQUENCE (The "Preferential Order")
         salesPitchFlow:
           type: array
@@ -367,11 +381,11 @@ components:
           items:
             type: string
             enum:
-              - "company_usp_pitch"       # Sell the Brand (Sustainable, Handmade)
-              - "product_value_pitch"     # Sell the Item (Leather, Specs)
+              - "company_usp_pitch" # Sell the Brand (Sustainable, Handmade)
+              - "product_value_pitch" # Sell the Item (Leather, Specs)
               - "return_policy_assurance" # Sell the Safety (7-day returns)
-              - "cod_availability_offer"  # Sell the Convenience (Pay later)
-              - "discount_offer"          # Sell the Price (Last resort)
+              - "cod_availability_offer" # Sell the Convenience (Pay later)
+              - "discount_offer" # Sell the Price (Last resort)
           example:
             - "company_usp_pitch"
             - "return_policy_assurance"
@@ -465,7 +479,7 @@ components:
           example: 5
 
         retryProtocol:
-          $ref: '#/components/schemas/RetryProtocol'
+          $ref: "#/components/schemas/RetryProtocol"
 
     # ================================================================
     # SHARED COMPONENT: IDENTITY & ICP
@@ -477,7 +491,7 @@ components:
           type: string
         gender:
           type: string
-          enum: ['male', 'female']
+          enum: ["male", "female"]
         traits:
           type: string
           enum: ["soft_luxury", "high_energy_sales", "professional_support"]
@@ -576,14 +590,14 @@ components:
                   type: number
                 codeType:
                   type: string
-                  description: '%tage or fixed'
+                  description: "%tage or fixed"
           additionalProperties: true
 
     InitiateCallResponse:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/CallStatus'
+          $ref: "#/components/schemas/CallStatus"
         callId:
           type: string
 
@@ -599,7 +613,7 @@ components:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/CallStatus'
+          $ref: "#/components/schemas/CallStatus"
         callId:
           type: string
 
@@ -612,21 +626,21 @@ components:
         event:
           allOf:
             - type: string
-            - $ref: '#/components/schemas/EventType'
+            - $ref: "#/components/schemas/EventType"
         extraContext:
           type: object
           additionalProperties: true
         data:
           oneOf:
-            - $ref: '#/components/schemas/CallCompletedData'
-            - $ref: '#/components/schemas/CreateOrderData'
-            - $ref: '#/components/schemas/SendWhatsappData'
+            - $ref: "#/components/schemas/CallCompletedData"
+            - $ref: "#/components/schemas/CreateOrderData"
+            - $ref: "#/components/schemas/SendWhatsappData"
       discriminator:
         propertyName: event
         mapping:
-          call.completed: '#/components/schemas/CallCompletedData'
-          create-order: '#/components/schemas/CreateOrderData'
-          send-whatsapp: '#/components/schemas/SendWhatsappData'
+          call.completed: "#/components/schemas/CallCompletedData"
+          create-order: "#/components/schemas/CreateOrderData"
+          send-whatsapp: "#/components/schemas/SendWhatsappData"
 
     CallCompletedData:
       type: object
@@ -647,7 +661,7 @@ components:
         recordingUrl:
           type: string
         status:
-          $ref: '#/components/schemas/CallStatus'
+          $ref: "#/components/schemas/CallStatus"
         price:
           type: number
 
@@ -701,4 +715,4 @@ components:
         phone:
           type: string
         reason:
-          $ref: '#/components/schemas/WhatsappReason'
+          $ref: "#/components/schemas/WhatsappReason"
