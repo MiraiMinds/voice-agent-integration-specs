@@ -6,8 +6,10 @@ info:
     name: API Architecture Team
     url: https://miraiminds.co
 servers:
-  - url: https://voice-agents.miraiminds.co
+  - url: https://api.voice-agents.miraiminds.co
     description: Production Server
+  - url: https://api.voicebot.miraiminds.co
+    description: Staging Server
 
 security:
   - PublicKeyAuth: []
