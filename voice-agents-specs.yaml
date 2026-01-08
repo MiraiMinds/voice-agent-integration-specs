@@ -9,10 +9,14 @@ info:
     name: Mirai Minds Proprietary License
     url: https://github.com/MiraiMinds/voice-agent-integration-specs/blob/main/LICENSE.md
 servers:
-  - url: https://voice-agents.miraiminds.co
+  - url: https://api.voice-agents.miraiminds.co
     description: Production Server
-  - url: https://staging.voice-agents.miraiminds.co
+  - url: https://api.voicebot.miraiminds.co
     description: Staging Server
+
+security:
+  - PublicKeyAuth: []
+    PrivateKeyAuth: []
 
 paths:
   /v1/shopify/onboarding:
@@ -67,7 +71,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  assistant_id:
+                  assistantId:
                     type: string
                   status:
                     type: string
@@ -136,10 +140,14 @@ paths:
 
 components:
   securitySchemes:
-    AccessKeyAuth:
+    PublicKeyAuth:
       type: apiKey
       in: header
-      name: access-key
+      name: x-public-key
+    PrivateKeyAuth:
+      type: apiKey
+      in: header
+      name: x-private-key
 
   parameters:
     WorkspaceHeader:
@@ -219,8 +227,9 @@ components:
     StoreIdentity:
       type: object
       required:
-        - shopDomain
+        - storeName
         - currencyCode
+        - timezone
         - supportContacts
       properties:
         shopDomain:
@@ -271,15 +280,15 @@ components:
     PolicyFramework:
       type: object
       required:
-        - return_policy
-        - shipping_policy
-        - cod_policy
+        - returnPolicy
+        - shippingPolicy
+        - codPolicy
       properties:
-        return_policy:
+        returnPolicy:
           $ref: "#/components/schemas/ReturnPolicy"
-        shipping_policy:
+        shippingPolicy:
           $ref: "#/components/schemas/ShippingPolicy"
-        cod_policy:
+        codPolicy:
           $ref: "#/components/schemas/CodPolicy"
 
     ReturnPolicy:
@@ -336,7 +345,7 @@ components:
         - agentIdentity
         - icpContext
         - callSettings
-        - assistantTypeSettings 
+        - typeSettings 
         - callInsightPlan
       properties:
         type:
@@ -348,44 +357,43 @@ components:
 
         # --- COMMON BLOCKS (Shared by ALL Agents) ---
         agentIdentity:
-          $ref: '#/components/schemas/AgentIdentity'
-        
+          $ref: "#/components/schemas/AgentIdentity"
+
         icpContext:
           $ref: "#/components/schemas/ICPContext"
 
         callSettings:
           $ref: "#/components/schemas/CallSettings"
 
-        assistantTypeSettings:
+        typeSettings:
           type: object
           description: "Dynamic configuration based on assistant type."
           oneOf:
-            - $ref: '#/components/schemas/AbandonedCartConfig'
-            - $ref: '#/components/schemas/CustomAssistantConfig'
+            - $ref: "#/components/schemas/AbandonedCartConfig"
+            - $ref: "#/components/schemas/CustomAssistantConfig"
           discriminator:
             propertyName: type
             mapping:
-              abandoned_cart: '#/components/schemas/AbandonedCartConfig'
-              custom: '#/components/schemas/CustomAssistantConfig'
+              abandoned_cart: "#/components/schemas/AbandonedCartConfig"
+              custom: "#/components/schemas/CustomAssistantConfig"
 
         callInsightPlan:
-          $ref: '#/components/schemas/CallInsightPlan'
+          $ref: "#/components/schemas/CallInsightPlan"
 
         trainingData:
-          $ref: '#/components/schemas/TrainingData'
-        
-        knowledgeBase:
-          $ref: '#/components/schemas/KnowledgeBase'
+          $ref: "#/components/schemas/TrainingData"
 
+        knowledgeBase:
+          $ref: "#/components/schemas/KnowledgeBase"
 
     AbandonedCartConfig:
       type: object
       required:
-        - salesPitchFlow
+        - pitchFlow
         - discountRules
       properties:
         # 1. THE STRATEGIC SEQUENCE (The "Preferential Order")
-        salesPitchFlow:
+        pitchFlow:
           type: array
           description: "The strict priority order of arguments the AI will use."
           minItems: 3
@@ -415,9 +423,9 @@ components:
     CustomAssistantConfig:
       type: object
       required:
-        - system_prompt
+        - systemPrompt
       properties:
-        system_prompt:
+        systemPrompt:
           type: string
           description: "Comprehensive instruction including identity, ICP, store info, pitch, objections."
         endCall:
@@ -496,7 +504,17 @@ components:
           type: array
           items:
             type: string
-            enum: ["Elegant", "understated", "premium feel", "high energy", "sales focused", "persuasive", "professional", "Support"]
+            enum:
+              [
+                "Elegant",
+                "understated",
+                "premium feel",
+                "high energy",
+                "sales focused",
+                "persuasive",
+                "professional",
+                "Support",
+              ]
 
     ICPContext:
       type: object
@@ -514,15 +532,27 @@ components:
             type: string
             enum: ["metro_urban", "tier1", "tier2", "tier3", "rural"]
           description: "Affects language complexity and speed."
-        
+
         # add language array with preference
         languages:
           type: array
           items:
             type: string
-            enum: ["english", "hindi", "telugu", "tamil", "kannada", "malayalam", "gujarati", "punjabi", "odia", "marathi"]
+            enum:
+              [
+                "english",
+                "hindi",
+                "telugu",
+                "tamil",
+                "kannada",
+                "malayalam",
+                "gujarati",
+                "punjabi",
+                "odia",
+                "marathi",
+              ]
           description: "Affects language complexity and speed."
-          
+
         # male or female or child focus brand add array of enum
         targetAudience:
           type: array
@@ -619,7 +649,7 @@ components:
                   description: "%tage or fixed"
           additionalProperties: true
 
-    InitiateCallResponse: 
+    InitiateCallResponse:
       type: object
       properties:
         status:
@@ -747,12 +777,12 @@ components:
         phone:
           type: string
         reason:
-          $ref: '#/components/schemas/WhatsappReason'
+          $ref: "#/components/schemas/WhatsappReason"
 
     CallInsightPlan:
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/InsightField'
+        $ref: "#/components/schemas/InsightField"
       description: "Map of insight names to their expected structure."
 
     InsightField:
@@ -770,7 +800,9 @@ components:
           items:
             type: string
         items:
-          $ref: '#/components/schemas/InsightField'
+          type: array
+          items:
+            $ref: "#/components/schemas/InsightField"
 
     TrainingData:
       type: object
@@ -779,7 +811,7 @@ components:
           type: array
           description: "List of Question-Answer pairs for training."
           items:
-            $ref: '#/components/schemas/faq'
+            $ref: "#/components/schemas/faq"
         humanAgentAudioFiles:
           type: array
           description: "List of URLs to audio recordings of human agent calls."
