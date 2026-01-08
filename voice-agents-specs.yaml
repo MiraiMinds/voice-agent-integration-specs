@@ -37,6 +37,7 @@ paths:
                 $ref: "#/components/schemas/OnboardingResponse"
         "400":
           description: Validation Error
+
   /assistant/create:
     post:
       summary: Create AI Assistant
@@ -46,7 +47,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PublicKeyHeader"
         - $ref: "#/components/parameters/PrivateKeyHeader"
-        - $ref: "#/components/parameters/WorkspaceIdHeader"
+        - $ref: "#/components/parameters/WorkspaceHeader"
       requestBody:
         required: true
         content:
@@ -74,7 +75,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PublicKeyHeader"
         - $ref: "#/components/parameters/PrivateKeyHeader"
-        - $ref: "#/components/parameters/WorkspaceIdHeader"
+        - $ref: "#/components/parameters/WorkspaceHeader"
       requestBody:
         required: true
         content:
@@ -97,7 +98,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PublicKeyHeader"
         - $ref: "#/components/parameters/PrivateKeyHeader"
-        - $ref: "#/components/parameters/WorkspaceIdHeader"
+        - $ref: "#/components/parameters/WorkspaceHeader"
       requestBody:
         required: true
         content:
@@ -136,8 +137,8 @@ components:
       name: access-key
 
   parameters:
-    WorkspaceIdHeader:
-      name: workspaceId
+    WorkspaceHeader:
+      name: workspace
       in: header
       required: true
       schema:
@@ -162,7 +163,7 @@ components:
     OnboardingResponse:
       type: object
       properties:
-        workspaceId:
+        workspace:
           type: string
           example: "4524239459234"
           description: The unique key for all future API calls.
@@ -465,25 +466,13 @@ components:
     CallSettings:
       type: object
       required:
-        - executionMode
+        - slots
         - retryProtocol
       properties:
-        executionMode:
-          type: string
-          enum: ["continuous", "batched"]
-          description: "Continuous = Real-time triggers. Batched = Specific slots."
-
-        startDate:
-          type: string
-          example: "2026-01-07"
-
-        endDate:
-          type: string
-          example: "2026-01-31"
-
-        batchWindows:
+        slots:
           type: array
-          description: "Required if execution_mode is 'batched'."
+          description: "Array of time slots for call execution"
+          minItems: 1
           items:
             type: object
             properties:
@@ -601,7 +590,11 @@ components:
           type: string
           format: uri
           description: HTTPS webhook URL
-        extraContext:
+        priority:
+          type: boolean
+          description: "Call priority level"
+          example: true
+        metadata:
           type: object
           properties:
             discount:
@@ -646,26 +639,32 @@ components:
       type: object
       required:
         - event
-        - data
       properties:
         event:
-          allOf:
-            - type: string
-            - $ref: "#/components/schemas/EventType"
-        extraContext:
+          type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              allOf:
+                - type: string
+                - $ref: "#/components/schemas/EventType"
+              description: "The event type"
+            data:
+              oneOf:
+                - $ref: "#/components/schemas/CallCompletedData"
+                - $ref: "#/components/schemas/CreateOrderData"
+                - $ref: "#/components/schemas/SendWhatsappData"
+          discriminator:
+            propertyName: type
+            mapping:
+              call.completed: "#/components/schemas/CallCompletedData"
+              create-order: "#/components/schemas/CreateOrderData"
+              send-whatsapp: "#/components/schemas/SendWhatsappData"
+        metadata:
           type: object
           additionalProperties: true
-        data:
-          oneOf:
-            - $ref: "#/components/schemas/CallCompletedData"
-            - $ref: "#/components/schemas/CreateOrderData"
-            - $ref: "#/components/schemas/SendWhatsappData"
-      discriminator:
-        propertyName: event
-        mapping:
-          call.completed: "#/components/schemas/CallCompletedData"
-          create-order: "#/components/schemas/CreateOrderData"
-          send-whatsapp: "#/components/schemas/SendWhatsappData"
 
     CallCompletedData:
       type: object
