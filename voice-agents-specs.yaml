@@ -157,13 +157,20 @@ components:
               type: string
               example: "prepaid"
               enum: ["prepaid", "postpaid"]
+
+
+            creditBalance:
+              type: integer
+              example: 100
+              descriptoin: >
+                Current available credits in workspace
             
-            negative_balance_allowance_minutes:
+            negativeCreditAllowance:
               type: integer
               example: 100
               description: >
                 The 'Overdraft' limit. The AI will continue to make calls 
-                for 100 minutes even if credits hit 0 before suspending.
+                for 100 credit even if credits hit 0 before suspending.
 
     # ----------------------------------------------------------------
     # REQUEST OBJECTS (unchanged)
