@@ -341,7 +341,7 @@ components:
         - agentIdentity
         - icpContext
         - callSettings
-        - assistantTypeSettings
+        - typeSettings 
         - callInsightPlan
       properties:
         type:
@@ -361,7 +361,7 @@ components:
         callSettings:
           $ref: "#/components/schemas/CallSettings"
 
-        assistantTypeSettings:
+        typeSettings:
           type: object
           description: "Dynamic configuration based on assistant type."
           oneOf:
@@ -385,11 +385,11 @@ components:
     AbandonedCartConfig:
       type: object
       required:
-        - salesPitchFlow
+        - pitchFlow
         - discountRules
       properties:
         # 1. THE STRATEGIC SEQUENCE (The "Preferential Order")
-        salesPitchFlow:
+        pitchFlow:
           type: array
           description: "The strict priority order of arguments the AI will use."
           minItems: 3
