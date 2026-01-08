@@ -6,11 +6,11 @@ info:
     name: API Architecture Team
     url: https://miraiminds.co
 servers:
-  - url: https://voice-agents.miraiminds.co/v1
+  - url: https://voice-agents.miraiminds.co
     description: Production Server
 
 paths:
-  /v1/onboarding:
+  /v1/shopify/onboarding:
     post:
       summary: onboarding shopify store
       operationId: initializeWorkspace
@@ -328,71 +328,51 @@ components:
       type: object
       required:
         - type
-        - identityCore
+        - agentIdentity
         - icpContext
         - callSettings
-        - assistantTaskConfig
+        - assistantTypeSettings 
+        - callInsightPlan
       properties:
-        # THE DISCRIMINATOR
         type:
           type: string
-          enum: ["abandoned_cart", "ndr_verification"]
-          description: "This value changes the validation rules for 'assistantTaskConfig'."
-
-        successMetric:
-          type: string
-          example: "payment_link_sent"
+          description: This value changes the validation rules for 'AdditionalContext'
+          enum:
+            - abandoned_cart
+            - custom
 
         # --- COMMON BLOCKS (Shared by ALL Agents) ---
-        identityCore:
-          $ref: "#/components/schemas/IdentityCore"
-
+        agentIdentity:
+          $ref: '#/components/schemas/AgentIdentity'
+        
         icpContext:
           $ref: "#/components/schemas/ICPContext"
 
         callSettings:
           $ref: "#/components/schemas/CallSettings"
 
-        # --- POLYMORPHIC BLOCK (Changes based on Type) ---
-        assistantTaskConfig:
+        assistantTypeSettings:
           type: object
-          description: "Dynamic configuration. Structure depends on 'type'."
+          description: "Dynamic configuration based on assistant type."
           oneOf:
-            - $ref: "#/components/schemas/AbandonedCartConfig"
+            - $ref: '#/components/schemas/AbandonedCartConfig'
+            - $ref: '#/components/schemas/CustomAssistantConfig'
           discriminator:
             propertyName: type
             mapping:
-              abandoned_cart: "#/components/schemas/AbandonedCartConfig"
+              abandoned_cart: '#/components/schemas/AbandonedCartConfig'
+              custom: '#/components/schemas/CustomAssistantConfig'
 
-        # --- TOOLS CONFIGURATION ---
-        tools:
-          type: array
-          description: "Array of tool integrations with their associated tools"
-          items:
-            type: object
-            required:
-              - integrationId
-              - tools
-            properties:
-              integrationId:
-                type: string
-                description: "MongoDB ObjectId of the integration"
-                pattern: "^[0-9a-fA-F]{24}$"
-                example: "507f1f77bcf86cd799439011"
-              tools:
-                type: array
-                description: "Array of MongoDB ObjectIds for tools"
-                items:
-                  type: string
-                  pattern: "^[0-9a-fA-F]{24}$"
-                example:
-                  - "507f191e810c19729de860ea"
-                  - "507f1f77bcf86cd799439012"
+        callInsightPlan:
+          $ref: '#/components/schemas/CallInsightPlan'
 
-    # ================================================================
-    # CONFIG A: ABANDONED CART (The Salesman)
-    # This is the ONLY place where "Sales Strategy" exists.
-    # ================================================================
+        trainingData:
+          $ref: '#/components/schemas/TrainingData'
+        
+        knowledgeBase:
+          $ref: '#/components/schemas/KnowledgeBase'
+
+
     AbandonedCartConfig:
       type: object
       required:
@@ -427,14 +407,18 @@ components:
               type: integer
               example: 15
 
-    # ================================================================
-    # CONFIG B: NDR VERIFICATION (The Logistics Fixer)
-    # Note: No "Sales Pitch" here. Totally different structure.
-    # ================================================================
+    CustomAssistantConfig:
+      type: object
+      required:
+        - system_prompt
+      properties:
+        system_prompt:
+          type: string
+          description: "Comprehensive instruction including identity, ICP, store info, pitch, objections."
+        endCall:
+          type: string
+          description: "Sentence to say when ending the call."
 
-    # ================================================================
-    # SHARED COMPONENT: RETRY PROTOCOL (Behavioral)
-    # ================================================================
     RetryProtocol:
       type: object
       description: "Smart logic based on why the call failed."
@@ -460,9 +444,6 @@ components:
           maximum: 5
           description: "How many times we can reschedule a call when user ask to callback"
 
-    # ================================================================
-    # SHARED COMPONENT: CALL SETTINGS (Time & Batching)
-    # ================================================================
     CallSettings:
       type: object
       required:
@@ -498,7 +479,7 @@ components:
     # ================================================================
     # SHARED COMPONENT: IDENTITY & ICP
     # ================================================================
-    IdentityCore:
+    AgentIdentity:
       type: object
       properties:
         name:
@@ -507,20 +488,42 @@ components:
           type: string
           enum: ["male", "female"]
         traits:
-          type: string
-          enum: ["soft_luxury", "high_energy_sales", "professional_support"]
+          type: array
+          items:
+            type: string
+            enum: ["Elegant", "understated", "premium feel", "high energy", "sales focused", "persuasive", "professional", "Support"]
 
     ICPContext:
       type: object
       properties:
-        targetAgeGroup:
-          type: string
-          enum: ["gen_z", "millennials", "gen_x", "boomers"]
+        targetAgeGroups:
+          type: array
+          items:
+            type: string
+            enum: ["gen_z", "millennials", "gen_x", "boomers"]
           description: "Affects slang usage. Gen Z = 'Vibe'; Boomers = 'Quality'."
 
-        locationTier:
-          type: string
-          enum: ["metro_urban", "tier_2_3_rural"]
+        locationTiers:
+          type: array
+          items:
+            type: string
+            enum: ["metro_urban", "tier1", "tier2", "tier3", "rural"]
+          description: "Affects language complexity and speed."
+        
+        # add language array with preference
+        languages:
+          type: array
+          items:
+            type: string
+            enum: ["english", "hindi", "telugu", "tamil", "kannada", "malayalam", "gujarati", "punjabi", "odia", "marathi"]
+          description: "Affects language complexity and speed."
+          
+        # male or female or child focus brand add array of enum
+        targetAudience:
+          type: array
+          items:
+            type: string
+            enum: ["male", "female", "children"]
           description: "Affects language complexity and speed."
 
     CallStatus:
@@ -611,7 +614,7 @@ components:
                   description: "%tage or fixed"
           additionalProperties: true
 
-    InitiateCallResponse:
+    InitiateCallResponse: 
       type: object
       properties:
         status:
@@ -739,4 +742,79 @@ components:
         phone:
           type: string
         reason:
-          $ref: "#/components/schemas/WhatsappReason"
+          $ref: '#/components/schemas/WhatsappReason'
+
+    CallInsightPlan:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/InsightField'
+      description: "Map of insight names to their expected structure."
+
+    InsightField:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: ["integer", "boolean", "string", "array"]
+        description:
+          type: string
+        enum:
+          type: array
+          items:
+            type: string
+        items:
+          $ref: '#/components/schemas/InsightField'
+
+    TrainingData:
+      type: object
+      properties:
+        faq:
+          type: array
+          description: "List of Question-Answer pairs for training."
+          items:
+            $ref: '#/components/schemas/faq'
+        humanAgentAudioFiles:
+          type: array
+          description: "List of URLs to audio recordings of human agent calls."
+          maxItems: 5
+          items:
+            type: string
+            format: uri
+
+    faq:
+      type: object
+      required:
+        - question
+        - answer
+      properties:
+        question:
+          type: string
+          example: "What is your return policy?"
+        answer:
+          type: string
+          example: "We offer a 7-day return policy for unused items."
+
+    KnowledgeBase:
+      type: object
+      properties:
+        documents:
+          type: array
+          description: "List of large documents (PDF, Docx, TXT) for deep knowledge retrieval."
+          items:
+            type: object
+            required:
+              - url
+              - title
+            properties:
+              url:
+                type: string
+                format: uri
+                description: "Publicly accessible URL of the document."
+              title:
+                type: string
+                description: "Name/Title of the document for citation."
+              type:
+                type: string
+                enum: ["pdf", "txt", "docx", "markdown"]
