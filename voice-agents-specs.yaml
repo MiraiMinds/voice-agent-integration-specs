@@ -363,6 +363,31 @@ components:
             mapping:
               abandoned_cart: "#/components/schemas/AbandonedCartConfig"
 
+        # --- TOOLS CONFIGURATION ---
+        tools:
+          type: array
+          description: "Array of tool integrations with their associated tools"
+          items:
+            type: object
+            required:
+              - integrationId
+              - tools
+            properties:
+              integrationId:
+                type: string
+                description: "MongoDB ObjectId of the integration"
+                pattern: "^[0-9a-fA-F]{24}$"
+                example: "507f1f77bcf86cd799439011"
+              tools:
+                type: array
+                description: "Array of MongoDB ObjectIds for tools"
+                items:
+                  type: string
+                  pattern: "^[0-9a-fA-F]{24}$"
+                example:
+                  - "507f191e810c19729de860ea"
+                  - "507f1f77bcf86cd799439012"
+
     # ================================================================
     # CONFIG A: ABANDONED CART (The Salesman)
     # This is the ONLY place where "Sales Strategy" exists.
