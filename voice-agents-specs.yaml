@@ -213,33 +213,16 @@ components:
     OnboardingRequest:
       type: object
       required:
-        - storeIdentity
-        - trustSignals
-        - policyFramework
-      properties:
-        storeIdentity:
-          $ref: "#/components/schemas/StoreIdentity"
-        trustSignals:
-          $ref: "#/components/schemas/TrustSignals"
-        policyFramework:
-          $ref: "#/components/schemas/PolicyFramework"
-
-    StoreIdentity:
-      type: object
-      required:
-        - storeName
+        - name
         - currencyCode
         - timezone
         - supportContacts
+        - trustSignals
+        - policyFramework
       properties:
-        shopDomain:
-          type: string
-          example: "brand.myshopify.com"
-        storeName:
+        name:
           type: string
           example: "The Leather Co."
-        adminToken:
-          type: string
         currencyCode:
           type: string
           example: "INR"
@@ -258,6 +241,10 @@ components:
               type: string
               format: email
               example: "support@brand.com"
+        trustSignals:
+          $ref: "#/components/schemas/TrustSignals"
+        policyFramework:
+          $ref: "#/components/schemas/PolicyFramework"
 
     TrustSignals:
       type: object
@@ -341,6 +328,7 @@ components:
     AssistantRequest:
       type: object
       required:
+        - name
         - variant
         - agentIdentity
         - icpContext
@@ -348,6 +336,9 @@ components:
         - variantConfigs 
         - callInsightPlan
       properties:
+        name:
+          type: string
+
         variant:
           type: string
           description: This value changes the validation rules for 'AdditionalContext'
