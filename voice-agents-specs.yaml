@@ -422,6 +422,18 @@ components:
         endCall:
           type: string
           description: "Sentence to say when ending the call."
+        variables:
+          type: array
+          items:
+            $ref: "#/components/schemas/Variable"
+    
+    Variable:
+      type: object
+      properties:
+        name:
+          type: string
+        required:
+          type: boolean
 
     RetryProtocol:
       type: object
@@ -491,6 +503,8 @@ components:
         gender:
           type: string
           enum: ["male", "female"]
+        voice:
+          type: string
         traits:
           type: array
           items:
