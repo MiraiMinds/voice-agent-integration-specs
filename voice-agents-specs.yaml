@@ -338,14 +338,14 @@ components:
     AssistantRequest:
       type: object
       required:
-        - type
+        - variant
         - agentIdentity
         - icpContext
         - callSettings
-        - typeSettings 
+        - variantConfigs 
         - callInsightPlan
       properties:
-        type:
+        variant:
           type: string
           description: This value changes the validation rules for 'AdditionalContext'
           enum:
@@ -362,7 +362,7 @@ components:
         callSettings:
           $ref: "#/components/schemas/CallSettings"
 
-        typeSettings:
+        variantConfigs:
           type: object
           description: "Dynamic configuration based on assistant type."
           oneOf:
