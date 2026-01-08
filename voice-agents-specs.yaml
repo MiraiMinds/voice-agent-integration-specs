@@ -595,7 +595,7 @@ components:
           description: Assistant ID
         payload:
           type: object
-          description: Shopify abandoned cart payload
+          description: Shopify abandoned cart payload or any other data that is relevant to the call
           additionalProperties: true
         callbackUrl:
           type: string
