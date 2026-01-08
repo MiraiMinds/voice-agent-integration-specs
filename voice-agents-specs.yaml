@@ -5,9 +5,14 @@ info:
   contact:
     name: API Architecture Team
     url: https://miraiminds.co
+  license:
+    name: Mirai Minds Proprietary License
+    url: https://github.com/MiraiMinds/voice-agent-integration-specs/blob/main/LICENSE.md
 servers:
   - url: https://voice-agents.miraiminds.co
     description: Production Server
+  - url: https://staging.voice-agents.miraiminds.co
+    description: Staging Server
 
 paths:
   /v1/shopify/onboarding:
