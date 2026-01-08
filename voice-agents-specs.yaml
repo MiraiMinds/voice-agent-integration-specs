@@ -5,6 +5,9 @@ info:
   contact:
     name: API Architecture Team
     url: https://miraiminds.co
+  license:
+    name: Mirai Minds Proprietary License
+    url: https://github.com/MiraiMinds/voice-agent-integration-specs/blob/main/LICENSE.md
 servers:
   - url: https://api.voice-agents.miraiminds.co
     description: Production Server
@@ -797,9 +800,7 @@ components:
           items:
             type: string
         items:
-          type: array
-          items:
-            $ref: "#/components/schemas/InsightField"
+          $ref: "#/components/schemas/InsightField"
 
     TrainingData:
       type: object
