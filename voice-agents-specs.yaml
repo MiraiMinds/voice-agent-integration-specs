@@ -400,10 +400,10 @@ components:
         - name
         - variant
         - agentIdentity
+        - analysisPlan
         - icpContext
         - callSettings
         - variantConfigs 
-        - callInsightPlan
       properties:
         name:
           type: string
@@ -418,6 +418,9 @@ components:
         # --- COMMON BLOCKS (Shared by ALL Agents) ---
         agentIdentity:
           $ref: "#/components/schemas/AgentIdentity"
+
+        analysisPlan:
+          $ref: "#/components/schemas/AnalysisPlan"
 
         icpContext:
           $ref: "#/components/schemas/ICPContext"
@@ -436,9 +439,6 @@ components:
             mapping:
               abandoned_cart: "#/components/schemas/AbandonedCartConfig"
               custom: "#/components/schemas/CustomAssistantConfig"
-
-        callInsightPlan:
-          $ref: "#/components/schemas/CallInsightPlan"
 
         trainingData:
           $ref: "#/components/schemas/TrainingData"
@@ -574,6 +574,32 @@ components:
           enum: ["male", "female"]
         voice:
           type: string
+        traits:
+          type: array
+          items:
+            type: string
+            enum:
+              [
+                "Elegant",
+                "understated",
+                "premium feel",
+                "high energy",
+                "sales focused",
+                "persuasive",
+                "professional",
+                "Support",
+              ]
+
+    AnalysisPlan:
+      type: object
+      properties:
+        successCriteriaPlan:
+          type: string
+        summaryPlan:
+          type: string
+        callInsightPlan:
+            $ref: "#/components/schemas/CallInsightPlan"
+
         traits:
           type: array
           items:
@@ -862,18 +888,20 @@ components:
       type: object
       required:
         - type
+        - description
+        - required
       properties:
         type:
           type: string
-          enum: ["integer", "boolean", "string", "array"]
+          enum: ["number", "boolean", "string",]
         description:
           type: string
+        required:
+          type: boolean
         enum:
           type: array
           items:
             type: string
-        required:
-          type: boolean
 
     TrainingData:
       type: object
