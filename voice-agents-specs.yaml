@@ -5,6 +5,9 @@ info:
   contact:
     name: API Architecture Team
     url: https://miraiminds.co
+  license:
+    name: Mirai Minds Proprietary License
+    url: https://github.com/MiraiMinds/voice-agent-integration-specs/blob/main/LICENSE.md
 servers:
   - url: https://api.voice-agents.miraiminds.co
     description: Production Server
@@ -16,7 +19,7 @@ security:
     PrivateKeyAuth: []
 
 paths:
-  /v1/shopify/onboarding:
+  /v2/shopify/onboarding:
     post:
       summary: onboarding shopify store
       operationId: initializeWorkspace
@@ -44,7 +47,7 @@ paths:
         "400":
           description: Validation Error
 
-  /assistant/create:
+  /v2/assistant/create:
     post:
       summary: Create AI Assistant
       operationId: createAssistant
@@ -68,12 +71,46 @@ paths:
               schema:
                 type: object
                 properties:
-                  assistant_id:
+                  assistantId:
                     type: string
                   status:
                     type: string
 
-  /v1/calls/initiate:
+  /v2/credits/transfer/{workspace}:
+    post:
+      summary: Transfer Credits to Workspace
+      operationId: transferCredits
+      tags:
+        - Credits
+      parameters:
+        - $ref: "#/components/parameters/PublicKeyHeader"
+        - $ref: "#/components/parameters/PrivateKeyHeader"
+        - name: workspace
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferCreditsRequest"
+      responses:
+        "200":
+          description: Credits Transferred Successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferCreditsResponse"
+        "400":
+          description: Validation Error / Insufficient Credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferCreditsErrorResponse"
+
+  /v2/calls/initiate:
     post:
       summary: Initiate AI Call
       tags:
@@ -96,7 +133,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/InitiateCallResponse"
 
-  /v1/calls/abort:
+  /v2/calls/abort:
     post:
       summary: Abort Call
       tags:
@@ -119,7 +156,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/AbortCallResponse"
 
-  /webhooks/call-events:
+  /v2/webhooks/call-events:
     post:
       summary: Call Events Webhook
       tags:
@@ -210,32 +247,16 @@ components:
     OnboardingRequest:
       type: object
       required:
-        - storeIdentity
+        - name
+        - currencyCode
+        - timezone
+        - supportContacts
         - trustSignals
         - policyFramework
       properties:
-        storeIdentity:
-          $ref: "#/components/schemas/StoreIdentity"
-        trustSignals:
-          $ref: "#/components/schemas/TrustSignals"
-        policyFramework:
-          $ref: "#/components/schemas/PolicyFramework"
-
-    StoreIdentity:
-      type: object
-      required:
-        - shopDomain
-        - currencyCode
-        - supportContacts
-      properties:
-        shopDomain:
-          type: string
-          example: "brand.myshopify.com"
-        storeName:
+        name:
           type: string
           example: "The Leather Co."
-        adminToken:
-          type: string
         currencyCode:
           type: string
           example: "INR"
@@ -254,6 +275,45 @@ components:
               type: string
               format: email
               example: "support@brand.com"
+        trustSignals:
+          $ref: "#/components/schemas/TrustSignals"
+        policyFramework:
+          $ref: "#/components/schemas/PolicyFramework"
+
+    TransferCreditsRequest:
+      type: object
+      required:
+        - credits
+      properties:
+        credits:
+          type: integer
+          description: Amount of credits to transfer
+          example: 100
+
+    TransferCreditsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the transfer
+          example: "success"
+        creditBalance:
+          type: integer
+          description: Updated credit balance after transfer
+          example: 100
+
+    TransferCreditsErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          example: "failed"
+        message:
+          type: string
+          example: "Something went wrong"
 
     TrustSignals:
       type: object
@@ -276,15 +336,15 @@ components:
     PolicyFramework:
       type: object
       required:
-        - return_policy
-        - shipping_policy
-        - cod_policy
+        - returnPolicy
+        - shippingPolicy
+        - codPolicy
       properties:
-        return_policy:
+        returnPolicy:
           $ref: "#/components/schemas/ReturnPolicy"
-        shipping_policy:
+        shippingPolicy:
           $ref: "#/components/schemas/ShippingPolicy"
-        cod_policy:
+        codPolicy:
           $ref: "#/components/schemas/CodPolicy"
 
     ReturnPolicy:
@@ -337,14 +397,18 @@ components:
     AssistantRequest:
       type: object
       required:
-        - type
+        - name
+        - variant
         - agentIdentity
+        - analysisPlan
         - icpContext
         - callSettings
-        - assistantTypeSettings
-        - callInsightPlan
+        - variantConfigs 
       properties:
-        type:
+        name:
+          type: string
+
+        variant:
           type: string
           description: This value changes the validation rules for 'AdditionalContext'
           enum:
@@ -355,13 +419,16 @@ components:
         agentIdentity:
           $ref: "#/components/schemas/AgentIdentity"
 
+        analysisPlan:
+          $ref: "#/components/schemas/AnalysisPlan"
+
         icpContext:
           $ref: "#/components/schemas/ICPContext"
 
         callSettings:
           $ref: "#/components/schemas/CallSettings"
 
-        assistantTypeSettings:
+        variantConfigs:
           type: object
           description: "Dynamic configuration based on assistant type."
           oneOf:
@@ -372,9 +439,6 @@ components:
             mapping:
               abandoned_cart: "#/components/schemas/AbandonedCartConfig"
               custom: "#/components/schemas/CustomAssistantConfig"
-
-        callInsightPlan:
-          $ref: "#/components/schemas/CallInsightPlan"
 
         trainingData:
           $ref: "#/components/schemas/TrainingData"
@@ -409,11 +473,11 @@ components:
     AbandonedCartConfig:
       type: object
       required:
-        - salesPitchFlow
+        - pitchFlow
         - discountRules
       properties:
         # 1. THE STRATEGIC SEQUENCE (The "Preferential Order")
-        salesPitchFlow:
+        pitchFlow:
           type: array
           description: "The strict priority order of arguments the AI will use."
           minItems: 3
@@ -443,14 +507,26 @@ components:
     CustomAssistantConfig:
       type: object
       required:
-        - system_prompt
+        - systemPrompt
       properties:
-        system_prompt:
+        systemPrompt:
           type: string
           description: "Comprehensive instruction including identity, ICP, store info, pitch, objections."
         endCall:
           type: string
           description: "Sentence to say when ending the call."
+        variables:
+          type: array
+          items:
+            $ref: "#/components/schemas/Variable"
+    
+    Variable:
+      type: object
+      properties:
+        name:
+          type: string
+        required:
+          type: boolean
 
     RetryProtocol:
       type: object
@@ -520,6 +596,34 @@ components:
         gender:
           type: string
           enum: ["male", "female"]
+        voice:
+          type: string
+        traits:
+          type: array
+          items:
+            type: string
+            enum:
+              [
+                "Elegant",
+                "understated",
+                "premium feel",
+                "high energy",
+                "sales focused",
+                "persuasive",
+                "professional",
+                "Support",
+              ]
+
+    AnalysisPlan:
+      type: object
+      properties:
+        successCriteriaPlan:
+          type: string
+        summaryPlan:
+          type: string
+        callInsightPlan:
+            $ref: "#/components/schemas/CallInsightPlan"
+
         traits:
           type: array
           items:
@@ -553,24 +657,23 @@ components:
             enum: ["metro_urban", "tier1", "tier2", "tier3", "rural"]
           description: "Affects language complexity and speed."
 
-        # add language array with preference
-        languages:
-          type: array
-          items:
-            type: string
-            enum:
-              [
-                "english",
-                "hindi",
-                "telugu",
-                "tamil",
-                "kannada",
-                "malayalam",
-                "gujarati",
-                "punjabi",
-                "odia",
-                "marathi",
-              ]
+        # add language string with preference
+        language:
+          type: string
+          enum:
+            [
+              "hinglish",
+              "english",
+              "hindi",
+              "telugu",
+              "tamil",
+              "kannada",
+              "malayalam",
+              "gujarati",
+              "punjabi",
+              "odia",
+              "marathi",
+            ]
           description: "Affects language complexity and speed."
 
         # male or female or child focus brand add array of enum
@@ -809,18 +912,20 @@ components:
       type: object
       required:
         - type
+        - description
+        - required
       properties:
         type:
           type: string
-          enum: ["integer", "boolean", "string", "array"]
+          enum: ["number", "boolean", "string",]
         description:
           type: string
+        required:
+          type: boolean
         enum:
           type: array
           items:
             type: string
-        items:
-          $ref: "#/components/schemas/InsightField"
 
     TrainingData:
       type: object
