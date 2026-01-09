@@ -19,7 +19,7 @@ security:
     PrivateKeyAuth: []
 
 paths:
-  /v1/shopify/onboarding:
+  /v2/shopify/onboarding:
     post:
       summary: onboarding shopify store
       operationId: initializeWorkspace
@@ -47,7 +47,7 @@ paths:
         "400":
           description: Validation Error
 
-  /assistant/create:
+  /v2/assistant/create:
     post:
       summary: Create AI Assistant
       operationId: createAssistant
@@ -76,7 +76,41 @@ paths:
                   status:
                     type: string
 
-  /v1/calls/initiate:
+  /v2/credits/transfer/{workspace}:
+    post:
+      summary: Transfer Credits to Workspace
+      operationId: transferCredits
+      tags:
+        - Credits
+      parameters:
+        - $ref: "#/components/parameters/PublicKeyHeader"
+        - $ref: "#/components/parameters/PrivateKeyHeader"
+        - name: workspace
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferCreditsRequest"
+      responses:
+        "200":
+          description: Credits Transferred Successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferCreditsResponse"
+        "400":
+          description: Validation Error / Insufficient Credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferCreditsErrorResponse"
+
+  /v2/calls/initiate:
     post:
       summary: Initiate AI Call
       tags:
@@ -99,7 +133,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/InitiateCallResponse"
 
-  /v1/calls/abort:
+  /v2/calls/abort:
     post:
       summary: Abort Call
       tags:
@@ -122,7 +156,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/AbortCallResponse"
 
-  /webhooks/call-events:
+  /v2/webhooks/call-events:
     post:
       summary: Call Events Webhook
       tags:
@@ -245,6 +279,41 @@ components:
           $ref: "#/components/schemas/TrustSignals"
         policyFramework:
           $ref: "#/components/schemas/PolicyFramework"
+
+    TransferCreditsRequest:
+      type: object
+      required:
+        - credits
+      properties:
+        credits:
+          type: integer
+          description: Amount of credits to transfer
+          example: 100
+
+    TransferCreditsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the transfer
+          example: "success"
+        creditBalance:
+          type: integer
+          description: Updated credit balance after transfer
+          example: 100
+
+    TransferCreditsErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          example: "failed"
+        message:
+          type: string
+          example: "Something went wrong"
 
     TrustSignals:
       type: object
@@ -538,24 +607,23 @@ components:
             enum: ["metro_urban", "tier1", "tier2", "tier3", "rural"]
           description: "Affects language complexity and speed."
 
-        # add language array with preference
-        languages:
-          type: array
-          items:
-            type: string
-            enum:
-              [
-                "english",
-                "hindi",
-                "telugu",
-                "tamil",
-                "kannada",
-                "malayalam",
-                "gujarati",
-                "punjabi",
-                "odia",
-                "marathi",
-              ]
+        # add language string with preference
+        language:
+          type: string
+          enum:
+            [
+              "hinglish",
+              "english",
+              "hindi",
+              "telugu",
+              "tamil",
+              "kannada",
+              "malayalam",
+              "gujarati",
+              "punjabi",
+              "odia",
+              "marathi",
+            ]
           description: "Affects language complexity and speed."
 
         # male or female or child focus brand add array of enum
