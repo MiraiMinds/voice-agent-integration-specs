@@ -19,7 +19,7 @@ security:
     PrivateKeyAuth: []
 
 paths:
-  /v2/shopify/onboarding:
+  /v2/workspace/onboard/shopify:
     post:
       summary: onboarding shopify store
       operationId: initializeWorkspace
@@ -403,7 +403,7 @@ components:
         - analysisPlan
         - icpContext
         - callSettings
-        - variantConfigs 
+        - variantConfigs
       properties:
         name:
           type: string
@@ -622,7 +622,7 @@ components:
         summaryPlan:
           type: string
         callInsightPlan:
-            $ref: "#/components/schemas/CallInsightPlan"
+          $ref: "#/components/schemas/CallInsightPlan"
 
         traits:
           type: array
@@ -717,16 +717,14 @@ components:
         - call.skip
         - call.rescheduled
         - call.aborted
-        - create-order
-        - send-whatsapp
+        - action
 
-    WhatsappReason:
+    ActionReason:
       type: string
       enum:
         - missing_address
-        - improper_address
         - missing_first_name
-        - send_payment_link
+        - invalid_cart_data
 
     InitiateCallRequest:
       type: object
@@ -814,41 +812,28 @@ components:
               description: "The event type"
             data:
               oneOf:
-                - $ref: "#/components/schemas/CallCompletedData"
-                - $ref: "#/components/schemas/CreateOrderData"
-                - $ref: "#/components/schemas/SendWhatsappData"
+                - $ref: "#/components/schemas/CallEventData"
+                - $ref: "#/components/schemas/ActionEventData"
           discriminator:
             propertyName: type
             mapping:
-              call.completed: "#/components/schemas/CallCompletedData"
-              create-order: "#/components/schemas/CreateOrderData"
-              send-whatsapp: "#/components/schemas/SendWhatsappData"
+              call.initiate: "#/components/schemas/CallEventData"
+              call.in-progress: "#/components/schemas/CallEventData"
+              call.ended: "#/components/schemas/CallEventData"
+              call.completed: "#/components/schemas/CallEventData"
+              call.timeout: "#/components/schemas/CallEventData"
+              call.failed: "#/components/schemas/CallEventData"
+              call.validation-failed: "#/components/schemas/CallEventData"
+              call.busy: "#/components/schemas/CallEventData"
+              call.no-answer: "#/components/schemas/CallEventData"
+              call.skip: "#/components/schemas/CallEventData"
+              call.rescheduled: "#/components/schemas/CallEventData"
+              call.aborted: "#/components/schemas/CallEventData"
+              end-of-call: "#/components/schemas/CallEventData"
+              action: "#/components/schemas/ActionEventData"
         metadata:
           type: object
           additionalProperties: true
-
-    CallCompletedData:
-      type: object
-      properties:
-        callId:
-          type: string
-        durationSeconds:
-          type: number
-        startedAt:
-          type: string
-          format: date-time
-        endedAt:
-          type: string
-          format: date-time
-        completedAt:
-          type: string
-          format: date-time
-        recordingUrl:
-          type: string
-        status:
-          $ref: "#/components/schemas/CallStatus"
-        price:
-          type: number
 
     CreateOrderData:
       type: object
@@ -893,14 +878,88 @@ components:
               type: string
             reason:
               type: string
+        note:
+          type: string
+        abandonedCheckoutId:
+          type: string
+          nullable: true
 
-    SendWhatsappData:
+    SendWhatsapp:
       type: object
       properties:
-        phone:
+        number:
           type: string
+          nullable: true
+
+    CallEventData:
+      type: object
+      properties:
+        call:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "call_123456"
+            status:
+              $ref: "#/components/schemas/CallStatus"
+            startedAt:
+              type: string
+              format: date-time
+              nullable: true
+            endedAt:
+              type: string
+              format: date-time
+              nullable: true
+            recordingUrl:
+              type: string
+              format: uri
+              nullable: true
+            durationSeconds:
+              type: number
+              description: "Call duration in seconds"
+              example: 45
+        analysis:
+          type: object
+          properties:
+            success:
+              type: boolean
+            summary:
+              type: string
+              example: "User expressed interest but requested a callback later."
+            requiredActions:
+              type: array
+              description: "Actions required after call eg. ['create-order', 'send-whatsapp', 'send-email']"
+              items:
+                type: string
+            insights:
+              type: object
+              additionalProperties: true
+              example: { "interested": true, "callback_requested": true }
+        credits:
+          type: object
+          properties:
+            used:
+              type: number
+              example: 1.5
+            available:
+              type: number
+              example: 98.5
+
+    ActionEventData:
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          enum: ["create-order", "send-whatsapp"]
         reason:
-          $ref: "#/components/schemas/WhatsappReason"
+          $ref: "#/components/schemas/ActionReason"
+          nullable: true
+        payload:
+          oneOf:
+            - $ref: "#/components/schemas/SendWhatsapp"
+            - $ref: "#/components/schemas/CreateOrderData"
 
     CallInsightPlan:
       type: object
@@ -917,7 +976,7 @@ components:
       properties:
         type:
           type: string
-          enum: ["number", "boolean", "string",]
+          enum: ["number", "boolean", "string"]
         description:
           type: string
         required:
