@@ -11,7 +11,7 @@ info:
 servers:
   - url: https://api.voice-agents.miraiminds.co
     description: Production Server
-  - url: https://api.voicebot.miraiminds.co
+  - url: https://api.stage.voice-agent.miraiminds.co
     description: Staging Server
 
 security:
@@ -110,7 +110,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/TransferCreditsErrorResponse"
 
-  /v2/calls/initiate:
+  /v2/call/initiate:
     post:
       summary: Initiate AI Call
       tags:
@@ -133,7 +133,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/InitiateCallResponse"
 
-  /v2/calls/abort:
+  /v2/call/abort:
     post:
       summary: Abort Call
       tags:
@@ -372,7 +372,7 @@ components:
             minDays:
               type: integer
               example: 3
-            maDays:
+            maxDays:
               type: integer
               example: 5
         freeShippingMinOrderValue:
@@ -445,30 +445,6 @@ components:
 
         knowledgeBase:
           $ref: "#/components/schemas/KnowledgeBase"
-
-        tools:
-          type: array
-          description: "Array of tool integrations with their associated tools"
-          items:
-            type: object
-            required:
-              - integrationId
-              - tools
-            properties:
-              integrationId:
-                type: string
-                description: "MongoDB ObjectId of the integration"
-                pattern: "^[0-9a-fA-F]{24}$"
-                example: "507f1f77bcf86cd799439011"
-              tools:
-                type: array
-                description: "Array of MongoDB ObjectIds for tools"
-                items:
-                  type: string
-                  pattern: "^[0-9a-fA-F]{24}$"
-                example:
-                  - "507f191e810c19729de860ea"
-                  - "507f1f77bcf86cd799439012"
 
     AbandonedCartConfig:
       type: object
@@ -604,14 +580,14 @@ components:
             type: string
             enum:
               [
-                "Elegant",
+                "elegant",
                 "understated",
                 "premium feel",
                 "high energy",
                 "sales focused",
                 "persuasive",
                 "professional",
-                "Support",
+                "support",
               ]
 
     AnalysisPlan:
@@ -623,22 +599,6 @@ components:
           type: string
         callInsightPlan:
           $ref: "#/components/schemas/CallInsightPlan"
-
-        traits:
-          type: array
-          items:
-            type: string
-            enum:
-              [
-                "Elegant",
-                "understated",
-                "premium feel",
-                "high energy",
-                "sales focused",
-                "persuasive",
-                "professional",
-                "Support",
-              ]
 
     ICPContext:
       type: object
@@ -729,12 +689,12 @@ components:
     InitiateCallRequest:
       type: object
       required:
-        - number
+        - phoneNumber
         - assistant
         - payload
         - callbackUrl
       properties:
-        number:
+        phoneNumber:
           type: string
           description: Phone number (E.164 recommended)
           example: "+919876543210"
@@ -953,6 +913,13 @@ components:
         action:
           type: string
           enum: ["create-order", "send-whatsapp"]
+        call:
+          type: object
+          required: 
+            - id
+          properties:
+            id:
+              type: string
         reason:
           $ref: "#/components/schemas/ActionReason"
           nullable: true
